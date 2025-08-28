@@ -179,3 +179,12 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Ignoruj pliki wykonywalne
+*.exe
+
+# Ignoruj folder srodowiska wirtualnego Pythona
+.venv/
+
+# Ignoruj pliki cache Pythona
+__pycache__/
