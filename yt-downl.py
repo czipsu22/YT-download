@@ -32,6 +32,7 @@ class App(ctk.CTk):
         self.yt_dlp_path = os.path.join(self.application_path, "yt-dlp.exe")
         self.ffmpeg_path = os.path.join(self.ffmpeg_base_path, "ffmpeg.exe")
         self.icon_path = os.path.join(self.ffmpeg_base_path, "icon.ico")
+        self.config_path = os.path.join(self.application_path, "config.json")
         
         if not os.path.exists(self.yt_dlp_path):
             messagebox.showerror("Błąd krytyczny", "Nie znaleziono pliku yt-dlp.exe!\nUpewnij się, że znajduje się on w tym samym folderze co aplikacja.")
@@ -42,7 +43,7 @@ class App(ctk.CTk):
 
         # --- Konfiguracja okna ---
         self.title("YT-downloader v2.0")
-        self.geometry("900x460")
+        self.geometry("900x520")
         if os.path.exists(self.icon_path):
             self.iconbitmap(self.icon_path)
         self.resizable(False, False)
@@ -68,40 +69,51 @@ class App(ctk.CTk):
 
         self.mode_switch = ctk.CTkSegmentedButton(self.controls_frame, values=["Wideo", "Tylko Audio"], command=self.toggle_menus)
         self.mode_switch.pack(padx=10, pady=5, fill="x")
-        self.mode_switch.set("Wideo")
-
-        self.quality_menu = ctk.CTkOptionMenu(self.controls_frame, values=["Najlepsza", "4320p (8K)", "2160p (4K)", "1440p (QHD)", "1080p (Full HD)", "720p (HD)", "480p", "360p", "240p", "144p"])
-        self.quality_menu.set("1440p (QHD)")
-        self.quality_menu.pack(padx=10, pady=5, fill="x")
         
-        self.audio_format_menu = ctk.CTkOptionMenu(self.controls_frame, values=["mp3", "m4a (najlepsza)", "opus"])
-        self.audio_format_menu.set("mp3")
+        # --- Pojemnik na dynamiczne menu ---
+        self.options_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
+        self.options_frame.pack(padx=10, pady=5, fill="x")
 
+        self.quality_menu = ctk.CTkOptionMenu(self.options_frame, values=["Najlepsza", "4320p (8K)", "2160p (4K)", "1440p (QHD)", "1080p (Full HD)", "720p (HD)", "480p", "360p", "240p", "144p"], command=lambda _: self.save_settings())
+        self.quality_menu.pack(fill="x")
+        
+        self.audio_format_menu = ctk.CTkOptionMenu(self.options_frame, values=["mp3", "m4a (najlepsza)", "opus"], command=lambda _: self.save_settings())
+        
         self.path_label = ctk.CTkLabel(self.controls_frame, text="Folder zapisu:")
         self.path_label.pack(padx=10, pady=(5, 0), anchor="w")
         
         self.path_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
-        self.path_frame.pack(padx=10, pady=(0, 10), fill="x")
+        self.path_frame.pack(padx=10, pady=(0, 5), fill="x")
         self.path_frame.grid_columnconfigure(0, weight=1)
         
         self.path_entry = ctk.CTkEntry(self.path_frame)
         self.path_entry.grid(row=0, column=0, sticky="ew")
-        downloads_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.path_entry.insert(0, downloads_path)
 
         self.browse_button = ctk.CTkButton(self.path_frame, text="...", width=40, command=self.browse_folder)
         self.browse_button.grid(row=0, column=1, padx=(5, 0))
+        
+        self.time_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
+        self.time_frame.pack(padx=10, pady=5, fill="x")
+        self.time_frame.grid_columnconfigure((1, 3), weight=1)
+
+        self.time_label = ctk.CTkLabel(self.time_frame, text="Pobierz fragment:")
+        self.time_label.grid(row=0, column=0, padx=(0,10))
+        self.start_time_entry = ctk.CTkEntry(self.time_frame, placeholder_text="00:00")
+        self.start_time_entry.grid(row=0, column=1, sticky="ew")
+        self.time_separator_label = ctk.CTkLabel(self.time_frame, text="-")
+        self.time_separator_label.grid(row=0, column=2, padx=5)
+        self.end_time_entry = ctk.CTkEntry(self.time_frame, placeholder_text="koniec")
+        self.end_time_entry.grid(row=0, column=3, sticky="ew")
 
         self.subtitles_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
         self.subtitles_frame.pack(padx=10, pady=5, fill="x")
         self.subtitles_label = ctk.CTkLabel(self.subtitles_frame, text="Napisy:")
         self.subtitles_label.pack(side="left", padx=(0, 10))
-        self.subtitles_menu = ctk.CTkOptionMenu(self.subtitles_frame, values=["Brak", "Osadź w pliku", "Osobny plik"])
-        self.subtitles_menu.set("Brak")
+        self.subtitles_menu = ctk.CTkOptionMenu(self.subtitles_frame, values=["Brak", "Osadź w pliku", "Osobny plik"], command=lambda _: self.save_settings())
         self.subtitles_menu.pack(side="left", fill="x", expand=True)
 
         self.download_button = ctk.CTkButton(self.controls_frame, text="Pobierz", command=self.start_download_thread)
-        self.download_button.pack(padx=10, pady=10, fill="x")
+        self.download_button.pack(padx=10, pady=5, fill="x")
 
         self.progress_bar = ctk.CTkProgressBar(self.controls_frame)
         self.progress_bar.pack(padx=10, pady=5, fill="x")
@@ -132,8 +144,57 @@ class App(ctk.CTk):
         self.devs_label = ctk.CTkLabel(self.footer_frame, text="devs: czipsu & gemini", font=ctk.CTkFont(size=10))
         self.devs_label.pack(side="right", padx=10)
 
+        # Inicjalizacja stanu interfejsu
+        self.load_settings()
+
 
     # --- Funkcje obslugujace zdarzenia ---
+
+    def load_settings(self):
+        try:
+            if os.path.exists(self.config_path):
+                with open(self.config_path, 'r') as f:
+                    settings = json.load(f)
+                
+                last_path = settings.get("last_path")
+                if last_path and os.path.isdir(last_path):
+                    self.path_entry.insert(0, last_path)
+                else:
+                    self.path_entry.insert(0, os.path.join(os.path.expanduser('~'), 'Downloads'))
+                
+                self.mode_switch.set(settings.get("download_mode", "Wideo"))
+                self.quality_menu.set(settings.get("video_quality", "1440p (QHD)"))
+                self.audio_format_menu.set(settings.get("audio_format", "mp3"))
+                self.subtitles_menu.set(settings.get("subtitles_option", "Brak"))
+                
+                self.toggle_menus(self.mode_switch.get())
+                return
+
+        except (json.JSONDecodeError, FileNotFoundError):
+            pass 
+        
+        # Ustawienia domyslne, jesli plik config nie istnieje lub jest uszkodzony
+        self.path_entry.insert(0, os.path.join(os.path.expanduser('~'), 'Downloads'))
+        self.mode_switch.set("Wideo")
+        self.quality_menu.set("1440p (QHD)")
+        self.audio_format_menu.set("mp3")
+        self.subtitles_menu.set("Brak")
+        self.toggle_menus("Wideo")
+
+    def save_settings(self):
+        settings = {
+            "last_path": self.path_entry.get(),
+            "download_mode": self.mode_switch.get(),
+            "video_quality": self.quality_menu.get(),
+            "audio_format": self.audio_format_menu.get(),
+            "subtitles_option": self.subtitles_menu.get()
+        }
+        try:
+            with open(self.config_path, 'w') as f:
+                json.dump(settings, f, indent=4)
+        except Exception as e:
+            print(f"Nie udalo sie zapisac ustawien: {e}")
+
 
     def schedule_fetch_info(self, event=None):
         if self.fetch_timer:
@@ -207,18 +268,20 @@ class App(ctk.CTk):
         return ansi_escape.sub('', text)
 
     def toggle_menus(self, choice):
+        self.save_settings()
         if choice == "Wideo":
             self.audio_format_menu.pack_forget()
-            self.quality_menu.pack(padx=10, pady=5, fill="x")
+            self.quality_menu.pack(fill="x")
         else:
             self.quality_menu.pack_forget()
-            self.audio_format_menu.pack(padx=10, pady=5, fill="x")
+            self.audio_format_menu.pack(fill="x")
 
     def browse_folder(self):
         folder_path = tkinter.filedialog.askdirectory()
         if folder_path:
             self.path_entry.delete(0, "end")
             self.path_entry.insert(0, folder_path)
+            self.save_settings()
 
     def start_download_thread(self):
         if self.is_downloading:
@@ -268,6 +331,12 @@ class App(ctk.CTk):
                 command.extend(["--embed-subs", "--all-subs"])
             elif subtitles_choice == "Osobny plik":
                 command.extend(["--write-subs", "--all-subs"])
+            
+            start_time = self.start_time_entry.get()
+            end_time = self.end_time_entry.get()
+            if start_time or end_time:
+                time_range = (start_time or "00:00") + "-" + (end_time or "")
+                command.extend(["--download-sections", f"*{time_range}"])
 
             command.append(url)
 
