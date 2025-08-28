@@ -42,7 +42,7 @@ class App(ctk.CTk):
             sys.exit()
 
         # --- Konfiguracja okna ---
-        self.title("YT-downloader v2.0")
+        self.title("YT-downloader v2.1")
         self.geometry("900x520")
         if os.path.exists(self.icon_path):
             self.iconbitmap(self.icon_path)
@@ -138,7 +138,7 @@ class App(ctk.CTk):
         self.footer_frame = ctk.CTkFrame(self, height=25)
         self.footer_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
         
-        self.version_label = ctk.CTkLabel(self.footer_frame, text="YT-downloader v2.0 based on yt-dlp", font=ctk.CTkFont(size=10))
+        self.version_label = ctk.CTkLabel(self.footer_frame, text="YT-downloader v2.1 based on yt-dlp", font=ctk.CTkFont(size=10))
         self.version_label.pack(side="left", padx=10)
 
         self.devs_label = ctk.CTkLabel(self.footer_frame, text="devs: czipsu & gemini", font=ctk.CTkFont(size=10))
