@@ -153,7 +153,7 @@ class App(ctk.CTk):
     def load_settings(self):
         try:
             if os.path.exists(self.config_path):
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
                 
                 last_path = settings.get("last_path")
@@ -190,8 +190,8 @@ class App(ctk.CTk):
             "subtitles_option": self.subtitles_menu.get()
         }
         try:
-            with open(self.config_path, 'w') as f:
-                json.dump(settings, f, indent=4)
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Nie udalo sie zapisac ustawien: {e}")
 
@@ -214,7 +214,7 @@ class App(ctk.CTk):
         try:
             self.status_label.configure(text="Pobieranie informacji...")
             command = [self.yt_dlp_path, "--dump-single-json", "--playlist-items", "1", url]
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, encoding='utf-8', errors='ignore', creationflags=subprocess.CREATE_NO_WINDOW)
             stdout, stderr = process.communicate()
 
             if process.returncode != 0:
@@ -340,7 +340,7 @@ class App(ctk.CTk):
 
             command.append(url)
 
-            self.download_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW)
+            self.download_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, encoding='utf-8', errors='ignore', creationflags=subprocess.CREATE_NO_WINDOW)
 
             for line in iter(self.download_process.stdout.readline, ''):
                 if not self.is_downloading:
@@ -381,3 +381,4 @@ class App(ctk.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+
