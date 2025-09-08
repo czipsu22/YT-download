@@ -82,8 +82,8 @@ class App(ctk.CTk):
             sys.exit()
 
         # --- Konfiguracja okna ---
-        self.title("YT-downloader v2.1")
-        self.geometry("900x520")
+        self.title("YT Downloader v2.3")
+        self.geometry("900x580")
         if os.path.exists(self.icon_path):
             self.iconbitmap(self.icon_path)
         self.resizable(False, False)
@@ -108,21 +108,23 @@ class App(ctk.CTk):
         self.action_timer = None
 
         self.mode_switch = ctk.CTkSegmentedButton(self.controls_frame, values=["Wideo", "Tylko Audio"], command=self.toggle_menus)
-        self.mode_switch.pack(padx=10, pady=5, fill="x")
+        self.mode_switch.pack(padx=10, pady=10, fill="x")
         
         self.options_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
-        self.options_frame.pack(padx=10, pady=5, fill="x")
+        self.options_frame.pack(padx=10, pady=0, fill="x")
+        self.options_frame.grid_columnconfigure(1, weight=1)
 
+        self.quality_label = ctk.CTkLabel(self.options_frame, text="Jakość wideo:")
         self.quality_menu = ctk.CTkOptionMenu(self.options_frame, values=["Najlepsza", "4320p (8K)", "2160p (4K)", "1440p (QHD)", "1080p (Full HD)", "720p (HD)", "480p", "360p", "240p", "144p"], command=lambda _: self.save_settings())
-        self.quality_menu.pack(fill="x")
         
+        self.audio_format_label = ctk.CTkLabel(self.options_frame, text="Format audio:")
         self.audio_format_menu = ctk.CTkOptionMenu(self.options_frame, values=["mp3", "m4a (najlepsza)", "opus"], command=lambda _: self.save_settings())
         
         self.path_label = ctk.CTkLabel(self.controls_frame, text="Folder zapisu:")
-        self.path_label.pack(padx=10, pady=(5, 0), anchor="w")
+        self.path_label.pack(padx=10, pady=(10, 0), anchor="w")
         
         self.path_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
-        self.path_frame.pack(padx=10, pady=(0, 5), fill="x")
+        self.path_frame.pack(padx=10, pady=(0, 10), fill="x")
         self.path_frame.grid_columnconfigure(0, weight=1)
         
         self.path_entry = ctk.CTkEntry(self.path_frame)
@@ -131,25 +133,33 @@ class App(ctk.CTk):
         self.browse_button = ctk.CTkButton(self.path_frame, text="...", width=40, command=self.browse_folder)
         self.browse_button.grid(row=0, column=1, padx=(5, 0))
         
-        self.time_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
-        self.time_frame.pack(padx=10, pady=5, fill="x")
-        self.time_frame.grid_columnconfigure((1, 3), weight=1)
+        self.advanced_frame = ctk.CTkFrame(self.controls_frame)
+        self.advanced_frame.pack(padx=10, pady=10, fill="x")
+        self.advanced_frame.grid_columnconfigure(1, weight=1)
 
-        self.time_label = ctk.CTkLabel(self.time_frame, text="Pobierz fragment:")
-        self.time_label.grid(row=0, column=0, padx=(0,10))
-        self.start_time_entry = ctk.CTkEntry(self.time_frame, placeholder_text="00:00")
-        self.start_time_entry.grid(row=0, column=1, sticky="ew")
-        self.time_separator_label = ctk.CTkLabel(self.time_frame, text="-")
-        self.time_separator_label.grid(row=0, column=2, padx=5)
-        self.end_time_entry = ctk.CTkEntry(self.time_frame, placeholder_text="koniec")
-        self.end_time_entry.grid(row=0, column=3, sticky="ew")
+        self.advanced_label = ctk.CTkLabel(self.advanced_frame, text="Opcje zaawansowane", font=ctk.CTkFont(size=12, weight="bold"))
+        self.advanced_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(5, 0), sticky="w")
+        
+        self.time_label = ctk.CTkLabel(self.advanced_frame, text="Pobierz fragment:")
+        self.time_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        self.time_inputs_frame = ctk.CTkFrame(self.advanced_frame, fg_color="transparent")
+        self.time_inputs_frame.grid(row=1, column=1, sticky="ew", padx=(0,10))
+        self.time_inputs_frame.grid_columnconfigure((0, 2), weight=1)
+        self.start_time_entry = ctk.CTkEntry(self.time_inputs_frame, placeholder_text="00:00")
+        self.start_time_entry.grid(row=0, column=0, sticky="ew")
+        self.time_separator_label = ctk.CTkLabel(self.time_inputs_frame, text="-", padx=5)
+        self.time_separator_label.grid(row=0, column=1)
+        self.end_time_entry = ctk.CTkEntry(self.time_inputs_frame, placeholder_text="koniec")
+        self.end_time_entry.grid(row=0, column=2, sticky="ew")
+        
+        self.subtitles_label = ctk.CTkLabel(self.advanced_frame, text="Napisy:")
+        self.subtitles_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        self.subtitles_menu = ctk.CTkOptionMenu(self.advanced_frame, values=["Brak", "Osadź w pliku", "Osobny plik"], command=lambda _: self.save_settings())
+        self.subtitles_menu.grid(row=2, column=1, sticky="ew", padx=(0,10), pady=5)
 
-        self.subtitles_frame = ctk.CTkFrame(self.controls_frame, fg_color="transparent")
-        self.subtitles_frame.pack(padx=10, pady=5, fill="x")
-        self.subtitles_label = ctk.CTkLabel(self.subtitles_frame, text="Napisy:")
-        self.subtitles_label.pack(side="left", padx=(0, 10))
-        self.subtitles_menu = ctk.CTkOptionMenu(self.subtitles_frame, values=["Brak", "Osadź w pliku", "Osobny plik"], command=lambda _: self.save_settings())
-        self.subtitles_menu.pack(side="left", fill="x", expand=True)
+
+        self.spacer = ctk.CTkLabel(self.controls_frame, text="")
+        self.spacer.pack(fill="y", expand=True)
 
         self.auto_download_checkbox = ctk.CTkCheckBox(self.controls_frame, text="Pobierz automatycznie po wklejeniu linku", command=self.save_settings)
         self.auto_download_checkbox.pack(padx=10, pady=5, anchor="w")
@@ -157,17 +167,20 @@ class App(ctk.CTk):
         self.download_button = ctk.CTkButton(self.controls_frame, text="Pobierz", command=self.start_download_thread)
         self.download_button.pack(padx=10, pady=5, fill="x")
 
-        self.progress_bar = ctk.CTkProgressBar(self.controls_frame)
-        self.progress_bar.pack(padx=10, pady=5, fill="x")
-        self.progress_bar.set(0)
-
         self.status_label = ctk.CTkLabel(self.controls_frame, text="Gotowy")
-        self.status_label.pack(padx=10, pady=(0, 10), anchor="w")
+        self.status_label.pack(padx=10, pady=(10, 2), anchor="w")
+
+        self.progress_bar = ctk.CTkProgressBar(self.controls_frame)
+        self.progress_bar.pack(padx=10, pady=(2, 10), fill="x")
+        self.progress_bar.set(0)
 
         # --- Ramka prawa (podglad) ---
         self.preview_frame = ctk.CTkFrame(self)
         self.preview_frame.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="nswe")
         self.preview_frame.grid_columnconfigure(0, weight=1)
+        self.preview_frame.grid_rowconfigure(0, weight=0)
+        self.preview_frame.grid_rowconfigure(1, weight=0)
+        self.preview_frame.grid_rowconfigure(2, weight=1)
 
         self.placeholder_image = Image.new("RGBA", (320, 180), (0,0,0,0))
         self.thumbnail_ctk_image = ctk.CTkImage(light_image=self.placeholder_image, size=(320, 180))
@@ -175,20 +188,17 @@ class App(ctk.CTk):
         self.thumbnail_label.pack(padx=10, pady=10, fill="x")
 
         self.title_label = ctk.CTkLabel(self.preview_frame, text="", font=ctk.CTkFont(size=14, weight="bold"), wraplength=350, justify="left")
-        self.title_label.pack(padx=10, pady=(0, 5), fill="x")
+        self.title_label.pack(padx=10, pady=(0, 5), fill="x", anchor="n")
 
         self.resolution_label = ctk.CTkLabel(self.preview_frame, text="", font=ctk.CTkFont(size=12), wraplength=350, justify="left")
-        self.resolution_label.pack(padx=10, pady=(0, 10), fill="x", anchor="w")
+        self.resolution_label.pack(padx=10, pady=(0, 10), fill="x", anchor="n")
         
         # --- Ramka dolna (stopka) ---
         self.footer_frame = ctk.CTkFrame(self, height=25)
         self.footer_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="ew")
         
-        self.version_label = ctk.CTkLabel(self.footer_frame, text="YT-downloader v2.1 based on yt-dlp", font=ctk.CTkFont(size=10))
+        self.version_label = ctk.CTkLabel(self.footer_frame, text="YT Downloader v2.3 by czipsu & Gemini", font=ctk.CTkFont(size=10))
         self.version_label.pack(side="left", padx=10)
-
-        self.devs_label = ctk.CTkLabel(self.footer_frame, text="devs: czipsu & gemini", font=ctk.CTkFont(size=10))
-        self.devs_label.pack(side="right", padx=10)
 
         # Inicjalizacja stanu interfejsu
         self.load_settings()
@@ -387,11 +397,15 @@ class App(ctk.CTk):
     def toggle_menus(self, choice):
         self.save_settings()
         if choice == "Wideo":
-            self.audio_format_menu.pack_forget()
-            self.quality_menu.pack(fill="x")
+            self.audio_format_label.grid_forget()
+            self.audio_format_menu.grid_forget()
+            self.quality_label.grid(row=0, column=0, padx=(0, 10), pady=5, sticky="w")
+            self.quality_menu.grid(row=0, column=1, sticky="ew")
         else:
-            self.quality_menu.pack_forget()
-            self.audio_format_menu.pack(fill="x")
+            self.quality_label.grid_forget()
+            self.quality_menu.grid_forget()
+            self.audio_format_label.grid(row=0, column=0, padx=(0, 10), pady=5, sticky="w")
+            self.audio_format_menu.grid(row=0, column=1, sticky="ew")
 
     def browse_folder(self):
         folder_path = tkinter.filedialog.askdirectory()
@@ -535,4 +549,5 @@ class App(ctk.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+
 
