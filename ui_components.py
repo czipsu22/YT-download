@@ -123,4 +123,3 @@ class PlaylistDialog(ctk.CTkToplevel):
     def cancel(self):
         self.cancel_callback()
         self.destroy()
-
